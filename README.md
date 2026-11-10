@@ -37,6 +37,21 @@ You can also browse the documentation locally by opening [`index.html`](index.ht
 
 ---
 
+## 🔌 Connectors & Technical Guides
+
+In addition to the 11 core sections above, this repository also houses the comprehensive technical deep dives migrated from the core repository:
+
+| Guide | Description | Markdown Link |
+|---|---|---|
+| 🔌 **Source Connectors** | Detailed configs for all 16 storage, database, and SaaS connectors | [`docs/ingestion/README.md`](docs/ingestion/README.md) |
+| 🛡️ **Data Quality Catalog** | Complete reference of DQ rules, thresholds, and quarantine metrics | [`docs/dq-rules/README.md`](docs/dq-rules/README.md) |
+| 🧩 **Module Guide** | Python package internals, functions, and architecture | [`docs/MODULE_GUIDE.md`](docs/MODULE_GUIDE.md) |
+| 🧪 **Testing Suite** | Unit test suite, integration tests, and CI/CD validation | [`docs/testing/TESTING_GUIDE.md`](docs/testing/TESTING_GUIDE.md) |
+| 📖 **Implementation Guide** | Complete implementation architecture and design decisions | [`docs/getting-started/Implementation_guide.md`](docs/getting-started/Implementation_guide.md) |
+| 💻 **API Reference Manual** | Full HTML function and module reference manual | [`docs/index.html`](docs/index.html) |
+
+---
+
 ## 💻 Running the Documentation Site Locally
 
 Clone this documentation repository and open `index.html`:
