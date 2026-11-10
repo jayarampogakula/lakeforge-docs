@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LakeForge Official Documentation | Enterprise Medallion Lakehouse Platform</title>
+  <meta name="description" content="Official documentation for LakeForge, the enterprise metadata-driven Medallion Lakehouse framework on Databricks and Delta Lake.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0b0f17;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --border-color: #273549;
+      --border-focus: #3b82f6;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-teal: #14b8a6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --accent-red: #ef4444;
+      --code-bg: #070b12;
+      --code-border: #1e293b;
+      --sidebar-width: 290px;
+      --header-height: 64px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 25px rgba(59, 130, 246, 0.15);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --border-color: #e2e8f0;
+      --border-focus: #2563eb;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --code-bg: #0f172a;
+      --code-border: #334155;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+      --shadow-glow: 0 0 25px rgba(37, 99, 235, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 15px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Top Nav */
+    header.top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      background: rgba(11, 15, 23, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.75rem;
+      z-index: 1000;
+    }
+    [data-theme="light"] header.top-nav {
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand-logo svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .version-badge {
+      font-size: 0.75rem;
+      padding: 2px 7px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 9999px;
+      color: var(--accent-cyan);
+      font-weight: 600;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-input {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.45rem 2.2rem 0.45rem 2.2rem;
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      width: 260px;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      width: 320px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-kbd {
+      position: absolute;
+      right: 0.6rem;
+      font-size: 0.7rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.45rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover {
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+      background: var(--bg-tertiary);
+    }
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-github:hover {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Layout */
+    .layout-container {
+      display: flex;
+      margin-top: var(--header-height);
+      min-height: calc(100vh - var(--header-height));
+    }
+
+    /* Sidebar */
+    aside.sidebar {
+      width: var(--sidebar-width);
+      position: fixed;
+      top: var(--header-height);
+      bottom: 0;
+      left: 0;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto;
+      padding: 1.5rem 1rem 2rem 1.25rem;
+      z-index: 90;
+    }
+
+    .nav-group {
+      margin-bottom: 1.5rem;
+    }
+    .nav-group-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      padding-left: 0.5rem;
+    }
+    .nav-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.45rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+    }
+    .nav-link:hover {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+    .nav-link.active {
+      color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.12);
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    main.content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 2.5rem 3.5rem 5rem 3.5rem;
+      max-width: 1080px;
+    }
+
+    /* Hero Section */
+    .hero-banner {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2.5rem;
+      margin-bottom: 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+    }
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      max-width: 720px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+    }
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--accent-blue);
+      color: #fff;
+      padding: 0.65rem 1.4rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.65rem 1.4rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent-blue);
+    }
+
+    /* Content Typography & Elements */
+    section {
+      margin-bottom: 4.5rem;
+      scroll-margin-top: calc(var(--header-height) + 1.5rem);
+    }
+    h2.section-heading {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    h3.sub-heading {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 2rem 0 0.85rem 0;
+      color: var(--text-primary);
+    }
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      font-size: 0.96rem;
+    }
+    ul, ol {
+      margin-bottom: 1.25rem;
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+    li {
+      margin-bottom: 0.4rem;
+    }
+    strong {
+      color: var(--text-primary);
+    }
+    a.inline-link {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+    a.inline-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Cards Grid */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent-blue);
+    }
+    .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.75rem;
+    }
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    .card-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Code Blocks */
+    .code-block-wrapper {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-md);
+      margin: 1.25rem 0;
+      overflow: hidden;
+    }
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--code-border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .code-lang {
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+    .btn-copy {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn-copy:hover {
+      color: var(--text-primary);
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
+    pre.code-content {
+      padding: 1.1rem;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.84rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    table.data-table th {
+      background: var(--bg-tertiary);
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border-color);
+    }
+    table.data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+    table.data-table tr:last-child td {
+      border-bottom: none;
+    }
+    table.data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Alerts */
+    .alert-box {
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+      border-left: 4px solid;
+      background: var(--bg-secondary);
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+    }
+    .alert-box.info {
+      border-left-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.08);
+    }
+    .alert-box.success {
+      border-left-color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .alert-box.warning {
+      border-left-color: var(--accent-amber);
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .alert-box.tip {
+      border-left-color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.08);
+    }
+    .alert-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .alert-text {
+      font-size: 0.92rem;
+      color: var(--text-primary);
+    }
+
+    /* Diagram Art */
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+    pre.ascii-diagram {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      color: #38bdf8;
+      line-height: 1.35;
+      text-align: left;
+      display: inline-block;
+      margin: 0 auto;
+    }
+
+    /* Footer */
+    footer.site-footer {
+      margin-top: 5rem;
+      border-top: 1px solid var(--border-color);
+      padding: 2.5rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 900px) {
+      aside.sidebar {
+        display: none;
+      }
+      main.content {
+        margin-left: 0;
+        padding: 2rem 1.25rem;
+      }
+      .search-input {
+        width: 180px;
+      }
+      .search-input:focus {
+        width: 210px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div style="display:flex; align-items:center; gap:1.25rem;">
+      <a href="#overview" class="brand-logo">
+        <svg viewBox="0 0 32 32">
+          <circle cx="16" cy="16" r="14" stroke="#3b82f6" stroke-width="2.5" />
+          <path d="M10 20L16 8L22 20H10Z" fill="url(#grad)" />
+          <defs>
+            <linearGradient id="grad" x1="10" y1="8" x2="22" y2="20" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#38bdf8"/>
+              <stop offset="1" stop-color="#3b82f6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="brand-title">LakeForge</span>
+      </a>
+      <span class="version-badge">v1.0.0</span>
+    </div>
+
+    <div class="nav-actions">
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="site-search" class="search-input" placeholder="Search documentation...">
+        <span class="search-kbd">Ctrl K</span>
+      </div>
+
+      <button id="theme-toggle" class="btn-icon" title="Toggle theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+
+      <a href="https://github.com/jayarampogakula/Lakeforge" target="_blank" class="btn-github">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="layout-container">
+
+    <!-- Left Navigation Sidebar -->
+    <aside class="sidebar">
+      <div class="nav-group">
+        <div class="nav-group-title">Documentation Guide</div>
+        <ul class="nav-links">
+          <li><a href="#overview" class="nav-link active">🏠 Overview</a></li>
+          <li><a href="#getting-started" class="nav-link">🚀 Getting Started</a></li>
+          <li><a href="#installation" class="nav-link">📦 Installation</a></li>
+          <li><a href="#architecture" class="nav-link">🏗️ Architecture</a></li>
+          <li><a href="#concepts" class="nav-link">💡 Concepts</a></li>
+          <li><a href="#cli" class="nav-link">💻 CLI Reference</a></li>
+          <li><a href="#examples" class="nav-link">📋 Examples</a></li>
+          <li><a href="#tutorials" class="nav-link">🎓 Tutorials</a></li>
+          <li><a href="#best-practices" class="nav-link">⭐ Best Practices</a></li>
+          <li><a href="#faq" class="nav-link">❓ FAQ</a></li>
+          <li><a href="#roadmap" class="nav-link">🗺️ Roadmap</a></li>
+          <li><a href="#releases" class="nav-link">🏷️ Releases</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">External Links</div>
+        <ul class="nav-links">
+          <li><a href="https://github.com/jayarampogakula/Lakeforge" target="_blank" class="nav-link">🐙 Core Repo</a></li>
+          <li><a href="https://github.com/jayarampogakula/lakeforge-docs" target="_blank" class="nav-link">📖 Docs Repo</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content">
+
+      <!-- Hero Banner -->
+      <section class="hero-banner" id="overview">
+        <div class="hero-badges">
+          <span class="pill-badge">⚡ Medallion Architecture</span>
+          <span class="pill-badge">🛡️ Automated Data Quality</span>
+          <span class="pill-badge">🏢 Multi-Tenancy Scoping</span>
+          <span class="pill-badge">🔒 Unity Catalog RBAC</span>
+        </div>
+        <h1 class="hero-title">Enterprise Medallion Lakehouse Platform</h1>
+        <p class="hero-subtitle">
+          LakeForge is a production-grade, metadata-driven framework for building, testing, validating, and governing 
+          mission-critical data pipelines on Databricks, Delta Lake, and Apache Spark.
+        </p>
+        <div class="hero-actions">
+          <a href="#getting-started" class="btn-primary">🚀 Get Started in 5 Min</a>
+          <a href="#cli" class="btn-secondary">💻 Explore CLI</a>
+          <a href="https://github.com/jayarampogakula/lakeforge-docs/tree/main/docs" target="_blank" class="btn-secondary">📄 Markdown Docs</a>
+        </div>
+      </section>
+
+      <!-- Key Capabilities Grid -->
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="card-icon">🔌</div>
+          <div class="card-title">16+ Source Connectors</div>
+          <div class="card-desc">Batch and streaming ingest from Oracle, Postgres, Snowflake, BigQuery, Kafka, S3, ADLS, and SaaS APIs.</div>
+        </div>
+        <div class="feature-card">
+          <div class="card-icon">🛡️</div>
+          <div class="card-title">DQ Engine & Quarantine</div>
+          <div class="card-desc">10+ validation checks route defective records to quarantine tables without halting your pipelines.</div>
+        </div>
+        <div class="feature-card">
+          <div class="card-icon">⏳</div>
+          <div class="card-title">SCD Type 1 & Type 2</div>
+          <div class="card-desc">Declarative Delta merges for in-place overwrites and audit-proof historical tracking with zero SQL boilerplate.</div>
+        </div>
+        <div class="feature-card">
+          <div class="card-icon">🎯</div>
+          <div class="card-title">Trust Engine Scoring</div>
+          <div class="card-desc">Automated 0–100% composite quality scoring with row drift tracking, duplicate checks, and HTML alerts.</div>
+        </div>
+      </div>
+
+      <!-- Section 1: Getting Started -->
+      <section id="getting-started">
+        <h2 class="section-heading">🚀 Getting Started</h2>
+        <p>
+          Get up and running with your first LakeForge pipeline in under 5 minutes. LakeForge runs seamlessly on Databricks notebooks, 
+          automated jobs, and local PySpark environments.
+        </p>
+
+        <h3 class="sub-heading">Step 1: Set Up Catalogs & Schemas</h3>
+        <p>Run these commands in Databricks SQL Warehouse or a notebook to create target Unity Catalog namespaces:</p>
+        <div class="code-block-wrapper">
+          <div class="code-header"><span class="code-lang">sql</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre class="code-content"><code>CREATE CATALOG IF NOT EXISTS bronze;
+CREATE CATALOG IF NOT EXISTS silver;
+CREATE CATALOG IF NOT EXISTS gold;
+CREATE CATALOG IF NOT EXISTS monitoring;
+
+CREATE SCHEMA IF NOT EXISTS bronze.raw;
+CREATE SCHEMA IF NOT EXISTS bronze.quarantine;
+CREATE SCHEMA IF NOT EXISTS silver.cleaned;
+CREATE SCHEMA IF NOT EXISTS silver.dim;
+CREATE SCHEMA IF NOT EXISTS gold.marts;
+CREATE SCHEMA IF NOT EXISTS monitoring.logs;</code></pre>
+        </div>
+
+        <h3 class="sub-heading">Step 2: Scaffold a LakeForge Project</h3>
+        <p>Use the LakeForge CLI to generate a standardized configuration folder:</p>
+        <div class="code-block-wrapper">
+          <div class="code-header"><span class="code-lang">bash</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre class="code-content"><code>lakeforge init my_lakehouse
+cd my_lakehouse
+lakeforge validate configs --env dev</code></pre>
+        </div>
+
+        <h3 class="sub-heading">Step 3: Run the Ingestion & Quality Pipeline</h3>
+        <div class="code-block-wrapper">
+          <div class="code-header"><span class="code-lang">python</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre class="code-content"><code>from pyspark.sql import SparkSession
+from lakeforge.ingestion import create_csv_loader
+from lakeforge.bronze import create_bronze_writer
+from lakeforge.dq.dq_engine import DQEngine
+
+spark = SparkSession.builder.appName("LakeForge-Quickstart").getOrCreate()
+
+# 1. Ingest Raw CSV
+loader = create_csv_loader(spark)
+df_raw = loader.load_csv("/Volumes/bronze/raw/landing/sales.csv", header=True)
+
+# 2. Append Audit Metadata and write to Bronze
+writer = create_bronze_writer(spark)
+df_bronze = writer.add_audit_columns(df_raw, source_system="pos_system")
+writer.write_to_bronze(df_bronze, target_table="bronze.raw.sales", mode="append")
+
+# 3. Validate Data Quality and Quarantine Failures
+rules = [
+    {"rule_name": "order_id_not_null", "rule_type": "null_check", "column": "order_id", "threshold": 0.0},
+    {"rule_name": "positive_amount", "rule_type": "range_check", "column": "amount", "min_value": 0.01}
+]
+dq_engine = DQEngine(spark=spark, rules=rules)
+valid_df, quarantine_df = dq_engine.validate(df_bronze)
+
+if quarantine_df.count() > 0:
+    quarantine_df.write.format("delta").mode("append").saveAsTable("bronze.quarantine.sales_bad")
+
+print(f"Pipeline executed! Clean rows: {valid_df.count()}, Quarantined rows: {quarantine_df.count()}")</code></pre>
+        </div>
+      </section>
+
+      <!-- Section 2: Installation -->
+      <section id="installation">
+        <h2 class="section-heading">📦 Installation</h2>
+        <p>LakeForge is available for Databricks Runtime, local Python environments, and Docker containers.</p>
+
+        <div class="card-grid">
+          <div class="feature-card">
+            <div class="card-title">Databricks Notebook</div>
+            <div class="code-block-wrapper">
+              <pre class="code-content"><code>%pip install git+https://github.com/jayarampogakula/Lakeforge.git
+dbutils.library.restartPython()</code></pre>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="card-title">Local Python / CLI</div>
+            <div class="code-block-wrapper">
+              <pre class="code-content"><code>pip install git+https://github.com/jayarampogakula/Lakeforge.git
+lakeforge --version</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="sub-heading">Cluster-Scoped Library Setup</h3>
+        <p>To enable LakeForge across your entire Databricks cluster:</p>
+        <ol>
+          <li>In your Databricks workspace, go to <strong>Compute</strong> ➔ Select your cluster.</li>
+          <li>Click the <strong>Libraries</strong> tab ➔ Click <strong>Install New</strong>.</li>
+          <li>Select <strong>PyPI</strong> and enter: <code>git+https://github.com/jayarampogakula/Lakeforge.git</code></li>
+          <li>Click <strong>Install</strong>.</li>
+        </ol>
+      </section>
+
+      <!-- Section 3: Architecture -->
+      <section id="architecture">
+        <h2 class="section-heading">🏗️ Architecture</h2>
+        <p>LakeForge organizes data processing into the classic Medallion architecture with automated quality gates:</p>
+
+        <div class="diagram-container">
+          <pre class="ascii-diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                      DATA SOURCES                                │
+│  Databases • Cloud Storage • APIs • Streaming • SaaS Apps       │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │ Ingestion Connectors (16+ Loaders)
+                       ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    BRONZE LAYER (Raw Zone)                       │
+│  - Raw format preservation      - File tracking                  │
+│  - System audit metadata        - Schema drift handling          │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ▼ DQ Engine Gate [Pass / Quarantine]
+        ┌──────────────┴──────────────┐
+        ▼                             ▼
+┌───────────────────────────┐   ┌────────────────────────────────┐
+│   SILVER LAYER (Cleansed) │   │     BRONZE QUARANTINE TABLE    │
+│ - Type casting & cleanup  │   │ - Defective records isolated   │
+│ - SCD Type 1 & 2 merges   │   │ - Triage metadata & rules      │
+└─────────────┬─────────────┘   └────────────────────────────────┘
+              │ Trust Engine Gate (0-100% Score)
+              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     GOLD LAYER (Business Marts)                  │
+│  - Star & snowflake schemas     - High-speed Z-Ordering         │
+│  - Dimensional aggregations     - Reporting datamarts            │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   VIEWS & CONSUMPTION LAYER                      │
+│  - Unity Catalog RBAC           - Tag-based column masking       │
+│  - Row-level access filters     - PowerBI / Tableau / AI Models  │
+└──────────────────────────────────────────────────────────────────┘
+          </pre>
+        </div>
+
+        <h3 class="sub-heading">System Audit Tracking Columns</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>_ingestion_timestamp</code></td>
+                <td><code>TIMESTAMP</code></td>
+                <td>Exact UTC timestamp of pipeline ingestion run</td>
+              </tr>
+              <tr>
+                <td><code>_ingestion_date</code></td>
+                <td><code>DATE</code></td>
+                <td>UTC date partition key for optimized pruning</td>
+              </tr>
+              <tr>
+                <td><code>_source_system</code></td>
+                <td><code>STRING</code></td>
+                <td>Source application or system identifier</td>
+              </tr>
+              <tr>
+                <td><code>_record_hash</code></td>
+                <td><code>STRING</code></td>
+                <td>MD5 cryptographic hash of all row values for duplicate detection</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 4: Concepts -->
+      <section id="concepts">
+        <h2 class="section-heading">💡 Concepts</h2>
+        
+        <h3 class="sub-heading">1. Declarative Pipelines</h3>
+        <p>No more fragile, hardcoded SQL scripts. Declare table connections, drift policies, DQ rules, and aggregations entirely in version-controlled JSON files.</p>
+
+        <h3 class="sub-heading">2. Multi-Tenancy & Client Scoping</h3>
+        <p>Pass <code>--client &lt;client_id&gt;</code> to override base ingestion or transformation rules for specific enterprise clients without duplicating code.</p>
+
+        <h3 class="sub-heading">3. The Quarantine Pattern</h3>
+        <p>Never let a single bad record crash an overnight batch. Bad records are routed to a quarantine table with failure metadata, while clean records continue to Silver and Gold.</p>
+
+        <h3 class="sub-heading">4. Trust Score Formulation</h3>
+        <p>The Trust Engine calculates a weighted score from 0% to 100% based on DQ pass rate, schema drift, row volume spikes, and key uniqueness.</p>
+      </section>
+
+      <!-- Section 5: CLI -->
+      <section id="cli">
+        <h2 class="section-heading">💻 Command Line Interface (CLI)</h2>
+        <p>The unified <code>lakeforge</code> CLI handles all pipeline execution, validation, and multi-stage deployments:</p>
+
+        <div class="code-block-wrapper">
+          <div class="code-header"><span class="code-lang">bash</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre class="code-content"><code># 1. Project Initialization
+lakeforge init my_project
+
+# 2. Configuration Validation
+lakeforge validate configs --env dev
+lakeforge validate configs --env prod --client client_alpha
+
+# 3. Pipeline Execution
+lakeforge run --layer bronze --name transactions --env dev
+lakeforge run --layer silver --name customers_clean --source bronze.raw.customers --scd2
+lakeforge run --layer gold --name daily_revenue --env prod
+lakeforge run --layer governance --env prod --dry-run
+
+# 4. Multi-Stage Deployment
+lakeforge deploy --stage staging --dry-run
+lakeforge deploy --stage prod --component all</code></pre>
+        </div>
+      </section>
+
+      <!-- Section 6: Examples -->
+      <section id="examples">
+        <h2 class="section-heading">📋 Examples</h2>
+
+        <h3 class="sub-heading">Example: Declarative SCD Type 2 Configuration</h3>
+        <div class="code-block-wrapper">
+          <div class="code-header"><span class="code-lang">json</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre class="code-content"><code>{
+  "target_table": "silver.dim.customers",
+  "scd_type": 2,
+  "primary_keys": ["customer_id"],
+  "track_history_columns": ["address", "city", "postal_code", "segment", "credit_limit"],
+  "effective_start_date_col": "effective_start_date",
+  "effective_end_date_col": "effective_end_date",
+  "is_current_col": "is_current",
+  "transformations": [
+    {
+      "type": "standardize",
+      "column": "email",
+      "operation": "lowercase"
+    }
+  ]
+}</code></pre>
+        </div>
+
+        <h3 class="sub-heading">Example: Gold Dimensional Aggregation</h3>
+        <div class="code-block-wrapper">
+          <div class="code-header"><span class="code-lang">json</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
+          <pre class="code-content"><code>{
+  "target_table": "gold.marts.daily_revenue",
+  "source_tables": [
+    {
+      "alias": "t",
+      "table": "silver.cleaned.transactions"
+    },
+    {
+      "alias": "c",
+      "table": "silver.dim.customers",
+      "join_type": "inner",
+      "join_condition": "t.customer_id = c.customer_id AND c.is_current = true"
+    }
+  ],
+  "group_by": ["CAST(t.order_date AS DATE) AS sale_date", "c.country_code"],
+  "metrics": [
+    "COUNT(DISTINCT t.order_id) AS total_orders",
+    "SUM(t.total_amount) AS total_gross_revenue"
+  ],
+  "z_order_columns": ["sale_date", "country_code"]
+}</code></pre>
+        </div>
+      </section>
+
+      <!-- Section 7: Tutorials -->
+      <section id="tutorials">
+        <h2 class="section-heading">🎓 Tutorials</h2>
+        <div class="card-grid">
+          <div class="feature-card">
+            <div class="card-title">🏬 End-to-End Retail Lakehouse</div>
+            <div class="card-desc">Build a complete sales data lakehouse from raw landing storage to a live Gold reporting datamart.</div>
+            <p style="margin-top:0.75rem;"><a href="docs/tutorials.md#tutorial-1-end-to-end-retail-lakehouse-from-scratch" class="inline-link">Read Tutorial ➔</a></p>
+          </div>
+          <div class="feature-card">
+            <div class="card-title">🛡️ Quarantine Remediation</div>
+            <div class="card-desc">Set up quarantine tables, inspect defective payloads, and replay corrected records back into Silver.</div>
+            <p style="margin-top:0.75rem;"><a href="docs/tutorials.md#tutorial-2-setting-up-automated-quarantine-workflows" class="inline-link">Read Tutorial ➔</a></p>
+          </div>
+          <div class="feature-card">
+            <div class="card-title">🏢 Multi-Tenant Isolation</div>
+            <div class="card-desc">Implement tenant-specific schema overrides and row-level access control for enterprise clients.</div>
+            <p style="margin-top:0.75rem;"><a href="docs/tutorials.md#tutorial-3-multi-tenant-client-scoping" class="inline-link">Read Tutorial ➔</a></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8: Best Practices -->
+      <section id="best-practices">
+        <h2 class="section-heading">⭐ Best Practices</h2>
+        <div class="alert-box tip">
+          <div class="alert-icon">💡</div>
+          <div class="alert-text">
+            <strong>Liquid Clustering:</strong> On DBR 13.3 LTS and higher, use Delta Liquid Clustering (<code>CLUSTER BY</code>) 
+            over legacy partition keys for high-cardinality multi-column filter acceleration.
+          </div>
+        </div>
+        <div class="alert-box info">
+          <div class="alert-icon">🔒</div>
+          <div class="alert-text">
+            <strong>Zero Hardcoded Credentials:</strong> Always store database passwords and tokens in Databricks Secret Scopes 
+            or Azure Key Vault and reference them in JSON configs.
+          </div>
+        </div>
+        <div class="alert-box warning">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-text">
+            <strong>VACUUM Retention Window:</strong> Maintain at least 7 days (168 hours) of Delta log retention to safeguard 
+            concurrent readers and allow point-in-time rollbacks.
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 9: FAQ -->
+      <section id="faq">
+        <h2 class="section-heading">❓ Frequently Asked Questions (FAQ)</h2>
+        
+        <h3 class="sub-heading">Q: How does LakeForge differ from Delta Live Tables (DLT)?</h3>
+        <p><strong>A:</strong> LakeForge is portable across standard PySpark, local Docker, and cloud clusters without DLT price premiums or vendor lock-in. It provides built-in multi-tenant config fallback, composite Trust Engine scoring, and CLI tooling.</p>
+
+        <h3 class="sub-heading">Q: Can LakeForge run outside Databricks?</h3>
+        <p><strong>A:</strong> Yes! The core ingestion, bronze, silver, gold, and trust engines run on open-source PySpark and Delta Lake (locally, in Docker, or on AWS EMR / GCP Dataproc).</p>
+
+        <h3 class="sub-heading">Q: What happens if a DQ rule fails?</h3>
+        <p><strong>A:</strong> LakeForge's Quarantine pattern isolates failed records into a separate quarantine table while clean records continue to Silver and Gold, avoiding pipeline interruptions.</p>
+      </section>
+
+      <!-- Section 10: Roadmap -->
+      <section id="roadmap">
+        <h2 class="section-heading">🗺️ Roadmap</h2>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Key Deliverables</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Phase 1</strong></td>
+                <td>v1.0.0</td>
+                <td><span style="color:var(--accent-green);">● Completed</span></td>
+                <td>16+ Ingestion connectors, Medallion engines, DQ Engine, Trust Engine, CLI.</td>
+              </tr>
+              <tr>
+                <td><strong>Phase 2</strong></td>
+                <td>v1.1.0</td>
+                <td><span style="color:var(--accent-cyan);">● Current</span></td>
+                <td>Databricks Asset Bundles, Terraform modules, Unity Catalog RBAC, PII masking.</td>
+              </tr>
+              <tr>
+                <td><strong>Phase 3</strong></td>
+                <td>v1.2.0</td>
+                <td><span style="color:var(--accent-amber);">● Planned</span></td>
+                <td>GenAI configuration assistant, Apache Iceberg / Hudi UniForm interoperability.</td>
+              </tr>
+              <tr>
+                <td><strong>Phase 4</strong></td>
+                <td>v2.0.0</td>
+                <td><span style="color:var(--text-muted);">○ Future</span></td>
+                <td>Browser-based visual web control plane, Federated Data Mesh governance.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 11: Releases -->
+      <section id="releases">
+        <h2 class="section-heading">🏷️ Releases</h2>
+        <div class="alert-box success">
+          <div class="alert-icon">🎉</div>
+          <div class="alert-text">
+            <strong>LakeForge 1.0.0 Official Release:</strong> Complete Medallion architecture framework with 16+ connectors, 
+            Data Quality quarantine pattern, SCD Type 1 & 2 merges, Trust Engine, and LakeForge CLI.
+          </div>
+        </div>
+        <p>LakeForge follows <a href="https://semver.org" target="_blank" class="inline-link">Semantic Versioning 2.0.0</a>. Read the complete changelog in <a href="docs/releases.md" class="inline-link">Release Notes</a>.</p>
+      </section>
+
+      <!-- Footer -->
+      <footer class="site-footer">
+        <div>© 2026 LakeForge Framework • Designed for Enterprise Data Engineering</div>
+        <div>
+          <a href="https://github.com/jayarampogakula/lakeforge-docs" target="_blank" class="inline-link">GitHub Repository</a> • 
+          <a href="https://opensource.org/licenses/Apache-2.0" target="_blank" class="inline-link">Apache 2.0 License</a>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    // Theme toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+
+    if (currentTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      themeIcon.textContent = '☀️';
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      if (isLight) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'dark');
+        themeIcon.textContent = '🌙';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        themeIcon.textContent = '☀️';
+      }
+    });
+
+    // Copy code snippet helper
+    function copyCode(btn) {
+      const code = btn.closest('.code-block-wrapper').querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.innerText = 'Copied!';
+        setTimeout(() => {
+          btn.innerText = 'Copy';
+        }, 2000);
+      });
+    }
+
+    // Keyboard shortcut for search
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('site-search').focus();
+      }
+    });
+
+    // Instant search filter
+    const searchInput = document.getElementById('site-search');
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      const sections = document.querySelectorAll('main.content section');
+      sections.forEach(sec => {
+        if (!query) {
+          sec.style.display = 'block';
+          return;
+        }
+        const text = sec.innerText.toLowerCase();
+        sec.style.display = text.includes(query) ? 'block' : 'none';
+      });
+    });
+
+    // Active link highlighting on scroll
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('main.content section');
+      const scrollPos = window.scrollY + 100;
+      sections.forEach(sec => {
+        if (scrollPos >= sec.offsetTop && scrollPos < sec.offsetTop + sec.offsetHeight) {
+          const id = sec.getAttribute('id');
+          document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${id}`) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
