@@ -4,6 +4,31 @@ All notable changes to LakeForge are documented here. LakeForge strictly adheres
 
 ---
 
+## [v1.1.0] - 2026-11-10 (Multi-Bundle & Enterprise Orchestration)
+
+### ✨ Key Features & Improvements
+
+#### 1. Multi-Bundle Architecture (`deployments/<client_id>/`)
+- Per-client bundles promoted to top-level `deployments/` (`client_alpha: databricks.yml + resources/`).
+- Deploy only selected clients without affecting other tenants or the global bundle.
+- Global manifests consolidated under `infrastructure/` (Databricks, Docker, Terraform, Workflows).
+
+#### 2. Environment & Volume Provisioning (`SETUP_Environment_Provisioning.ipynb`)
+- Automated creation of environment catalogs (`<env>_bronze`, `<env>_silver`, `<env>_gold`, `<env>_quarantine`, `<env>_monitoring`).
+- Dynamic provisioning of tenant catalogs (`<env>_<client_id>`) and raw landing volumes (`/Volumes/<env>_<client>/raw_files/landing/`).
+
+#### 3. Category-First Configuration Hierarchy
+- Restructured client overrides to `configs/<category>/<client_id>/<file>.json` for improved discoverability and clean directory co-location.
+- Organized views into categorized subfolders: `configs/views/bronze/`, `configs/views/silver/`, `configs/views/gold/`.
+- Added `configs/governance/data_protection.json` for centralized column-level PII masking and row filters.
+
+#### 4. Serverless Pipeline Runtime & CI Guardrails
+- Automatic `/Workspace` path detection for seamless imports in Databricks Serverless environments.
+- Bronze `source_system` parameterization and reconstructed Silver transformation dependencies.
+- Strict CI/CD branch policy enforcement: `dev` builds from any branch, while `test`, `staging`, and `prod` enforce `main` branch only.
+
+---
+
 ## [v1.0.0] - 2026-11-01 (Official Initial Release)
 
 We are thrilled to announce the official release of **LakeForge 1.0.0** — an enterprise-grade, metadata-driven Medallion Lakehouse framework on Databricks!

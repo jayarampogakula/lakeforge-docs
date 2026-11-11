@@ -44,17 +44,21 @@ This roadmap highlights completed milestones, current engineering priorities, an
 
 ---
 
-## 🚀 Phase 2: Enterprise Scaling & Automation (Current - v1.1.0)
+## 🚀 Phase 2: Enterprise Scaling & Multi-Bundle Orchestration (v1.1.0)
 
-- [x] **Databricks Asset Bundles (DABs)**:
-  - Native `databricks.yml` bundle manifests for reproducible multi-workspace promotion.
-- [x] **Multi-Cloud Infrastructure as Code (IaC)**:
-  - Production Terraform modules (`deployment/terraform/`) for Azure, AWS, and GCP.
-- [x] **Multi-Tenant Scoping**:
-  - Hierarchical client config overrides (`configs/clients/<client_id>/`).
-- [x] **Centralized Governance & Security**:
-  - Automated Unity Catalog RBAC grants.
-  - Tag-based column PII masking (SHA-256, redaction) and row-level access filters.
+- [x] **Multi-Bundle Architecture (DABs)**:
+  - Independent client bundles under `deployments/<client_id>/databricks.yml` and shared root `databricks.yml`.
+  - Selective single-client deployment without cross-tenant impact.
+- [x] **Automated Environment & Volume Provisioning**:
+  - `SETUP_Environment_Provisioning.ipynb` dynamically builds `<env>_bronze`, `<env>_silver`, `<env>_gold`, `<env>_quarantine`, `<env>_<client>`, and landing volumes.
+- [x] **Category-First Multi-Tenant Scoping**:
+  - Clean config hierarchy (`configs/<type>/<client_id>/<file>.json`) with automatic fallback to global defaults.
+- [x] **Centralized Governance & Data Protection**:
+  - Automated Unity Catalog RBAC grants and `data_protection.json` tag-based PII masking policies (SHA-256, redaction).
+- [x] **CI/CD Branch Policy Guardrails**:
+  - Enforcement in GitHub Actions and Azure DevOps: `dev` from any branch; `test`, `staging`, `prod` from `main` only.
+- [x] **Serverless Databricks Runtime Compatibility**:
+  - Dynamic `/Workspace` path auto-detection for serverless notebook imports.
 - [ ] **Enhanced Streaming Connectors**:
   - Native Azure Event Hubs and Google Cloud Pub/Sub connectors.
   - Micro-batch trigger tuning and backpressure telemetry.

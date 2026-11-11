@@ -92,7 +92,7 @@ LakeForge provides a production-ready container image for headless deployments, 
 
 ### Dockerfile
 
-Located at `deployment/docker/Dockerfile`:
+Located at `infrastructure/docker/Dockerfile`:
 
 ```dockerfile
 FROM python:3.10-slim
@@ -108,15 +108,15 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 WORKDIR /app
 
-# Copy dependency specifications
-COPY requirements.txt pyproject.toml setup.py /app/
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy dependency specifications (modern pyproject.toml packaging)
+COPY pyproject.toml /app/
+RUN pip install --no-cache-dir .
 
 # Copy LakeForge codebase
 COPY lakeforge/ /app/lakeforge/
 COPY configs/ /app/configs/
 
-# Install LakeForge package
+# Install LakeForge package in editable mode
 RUN pip install --no-cache-dir -e .
 
 ENTRYPOINT ["lakeforge"]
@@ -128,33 +128,43 @@ CMD ["--help"]
 Run tests and configuration validations in isolated containers:
 
 ```bash
-cd deployment/docker
+cd infrastructure/docker
 docker compose build
 docker compose run lakeforge-app validate /app/configs --env dev
 ```
 
 ---
 
-## 🏗️ 4. Databricks Asset Bundles (DABs)
+## 🏗️ 4. Databricks Asset Bundles (DABs) & Multi-Bundle Layout
 
-LakeForge includes native support for **Databricks Asset Bundles (`databricks.yml`)** for automated, reproducible deployment across Dev, Test, Staging, and Production workspaces.
+LakeForge supports enterprise Databricks Asset Bundles for both global workloads and per-client independent deployments:
 
-1. Install the Databricks CLI:
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
-   ```
-2. Authenticate:
-   ```bash
-   databricks auth login --host https://<databricks-instance>.azuredatabricks.net
-   ```
-3. Deploy the bundle:
-   ```bash
-   databricks bundle deploy --target dev
-   ```
-4. Run the bundle workflow:
-   ```bash
-   databricks bundle run lakeforge_bronze_job --target dev
-   ```
+### Global Main Bundle (`databricks.yml`)
+Deploys the shared framework and cross-catalog Medallion pipeline:
+```bash
+# Validate bundle syntax
+databricks bundle validate -t dev
+
+# Deploy global bundle to dev
+databricks bundle deploy -t dev
+
+# Run global pipeline
+databricks bundle run lakeforge_global_etl_pipeline -t dev
+```
+
+### Per-Client Independent Bundles (`deployments/<client_id>/`)
+Deploy only a specific tenant's pipelines without touching the global bundle or other tenants:
+```bash
+# Navigate to the client's deployment bundle
+cd deployments/client_alpha
+
+# Validate and deploy client bundle
+databricks bundle validate -t dev
+databricks bundle deploy -t dev
+
+# Run client-specific ETL job
+databricks bundle run client_alpha_etl_pipeline -t dev
+```
 
 ---
 

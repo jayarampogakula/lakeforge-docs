@@ -10,26 +10,25 @@ LakeForge simplifies and standardizes building production data pipelines followi
 
 Follow this step-by-step guide to get your first LakeForge pipeline running on Databricks or local Spark.
 
-### Step 1: Create Unity Catalog Structure
+### Step 1: Provision Environment & Volumes
 
-Execute these SQL commands in a Databricks SQL Warehouse or Notebook to initialize the target catalogs and schemas:
+LakeForge provides an automated provisioning pipeline (`pipelines/SETUP_Environment_Provisioning.ipynb`) that creates the target Unity Catalog structure and landing volumes based on your active environment and client scope:
 
 ```sql
--- Catalogs for Medallion architecture
-CREATE CATALOG IF NOT EXISTS bronze;
-CREATE CATALOG IF NOT EXISTS silver;
-CREATE CATALOG IF NOT EXISTS gold;
-CREATE CATALOG IF NOT EXISTS monitoring;
+-- Environment catalogs for Medallion architecture
+CREATE CATALOG IF NOT EXISTS dev_bronze;
+CREATE CATALOG IF NOT EXISTS dev_silver;
+CREATE CATALOG IF NOT EXISTS dev_gold;
+CREATE CATALOG IF NOT EXISTS dev_quarantine;
+CREATE CATALOG IF NOT EXISTS dev_monitoring;
 
--- Schemas
-CREATE SCHEMA IF NOT EXISTS bronze.raw;
-CREATE SCHEMA IF NOT EXISTS bronze.quarantine;
-CREATE SCHEMA IF NOT EXISTS silver.cleaned;
-CREATE SCHEMA IF NOT EXISTS silver.dim;
-CREATE SCHEMA IF NOT EXISTS gold.marts;
-CREATE SCHEMA IF NOT EXISTS monitoring.logs;
-CREATE SCHEMA IF NOT EXISTS monitoring.metrics;
+-- Tenant-specific catalog and raw files landing volume
+CREATE CATALOG IF NOT EXISTS dev_client_alpha;
+CREATE SCHEMA IF NOT EXISTS dev_client_alpha.raw_files;
+CREATE VOLUME IF NOT EXISTS dev_client_alpha.raw_files.landing;
 ```
+
+> 💡 **Tip:** Running `SETUP_Environment_Provisioning.ipynb` dynamically checks your environment configuration and provisions these objects automatically.
 
 ---
 

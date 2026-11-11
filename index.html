@@ -634,7 +634,7 @@
         </svg>
         <span class="brand-title">LakeForge</span>
       </a>
-      <span class="version-badge">v1.0.0</span>
+      <span class="version-badge">v1.1.0</span>
     </div>
 
     <div class="nav-actions">
@@ -746,21 +746,21 @@
           automated jobs, and local PySpark environments.
         </p>
 
-        <h3 class="sub-heading">Step 1: Set Up Catalogs & Schemas</h3>
-        <p>Run these commands in Databricks SQL Warehouse or a notebook to create target Unity Catalog namespaces:</p>
+        <h3 class="sub-heading">Step 1: Provision Environment & Volumes</h3>
+        <p>Execute the automated provisioning pipeline (<code>pipelines/SETUP_Environment_Provisioning.ipynb</code>) or run SQL to create environment catalogs and landing volumes:</p>
         <div class="code-block-wrapper">
           <div class="code-header"><span class="code-lang">sql</span><button class="btn-copy" onclick="copyCode(this)">Copy</button></div>
-          <pre class="code-content"><code>CREATE CATALOG IF NOT EXISTS bronze;
-CREATE CATALOG IF NOT EXISTS silver;
-CREATE CATALOG IF NOT EXISTS gold;
-CREATE CATALOG IF NOT EXISTS monitoring;
+          <pre class="code-content"><code>-- Environment catalogs for Medallion architecture
+CREATE CATALOG IF NOT EXISTS dev_bronze;
+CREATE CATALOG IF NOT EXISTS dev_silver;
+CREATE CATALOG IF NOT EXISTS dev_gold;
+CREATE CATALOG IF NOT EXISTS dev_quarantine;
+CREATE CATALOG IF NOT EXISTS dev_monitoring;
 
-CREATE SCHEMA IF NOT EXISTS bronze.raw;
-CREATE SCHEMA IF NOT EXISTS bronze.quarantine;
-CREATE SCHEMA IF NOT EXISTS silver.cleaned;
-CREATE SCHEMA IF NOT EXISTS silver.dim;
-CREATE SCHEMA IF NOT EXISTS gold.marts;
-CREATE SCHEMA IF NOT EXISTS monitoring.logs;</code></pre>
+-- Tenant-specific catalog and raw files landing volume
+CREATE CATALOG IF NOT EXISTS dev_client_alpha;
+CREATE SCHEMA IF NOT EXISTS dev_client_alpha.raw_files;
+CREATE VOLUME IF NOT EXISTS dev_client_alpha.raw_files.landing;</code></pre>
         </div>
 
         <h3 class="sub-heading">Step 2: Scaffold a LakeForge Project</h3>
@@ -846,6 +846,13 @@ lakeforge --version</code></pre>
         <div class="diagram-container">
           <pre class="ascii-diagram">
 ┌─────────────────────────────────────────────────────────────────┐
+│              STAGE 0: ENVIRONMENT PROVISIONING                  │
+│  Automated catalog & volume setup: &lt;env&gt;_bronze, &lt;env&gt;_silver,  │
+│  &lt;env&gt;_gold, &lt;env&gt;_quarantine, &lt;env&gt;_&lt;client_id&gt; (landing vol)   │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────┐
 │                      DATA SOURCES                                │
 │  Databases • Cloud Storage • APIs • Streaming • SaaS Apps       │
 └──────────────────────┬──────────────────────────────────────────┘
@@ -855,6 +862,7 @@ lakeforge --version</code></pre>
 │                    BRONZE LAYER (Raw Zone)                       │
 │  - Raw format preservation      - File tracking                  │
 │  - System audit metadata        - Schema drift handling          │
+│  - Staging Landing Volume: /Volumes/&lt;client&gt;/raw_files/landing/ │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼ DQ Engine Gate [Pass / Quarantine]
@@ -875,9 +883,11 @@ lakeforge --version</code></pre>
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                   VIEWS & CONSUMPTION LAYER                      │
-│  - Unity Catalog RBAC           - Tag-based column masking       │
-│  - Row-level access filters     - PowerBI / Tableau / AI Models  │
+│           CATEGORIZED VIEWS & DATA PROTECTION LAYER              │
+│  - Views: configs/views/bronze/, silver/, gold/                 │
+│  - Per-Client Views: configs/views/&lt;layer&gt;/&lt;client_id&gt;/         │
+│  - Data Protection: configs/governance/data_protection.json      │
+│  - Tag-based column PII masking (SHA256, REDACT) & Row Filters  │
 └──────────────────────────────────────────────────────────────────┘
           </pre>
         </div>
@@ -925,8 +935,17 @@ lakeforge --version</code></pre>
         <h3 class="sub-heading">1. Declarative Pipelines</h3>
         <p>No more fragile, hardcoded SQL scripts. Declare table connections, drift policies, DQ rules, and aggregations entirely in version-controlled JSON files.</p>
 
-        <h3 class="sub-heading">2. Multi-Tenancy & Client Scoping</h3>
-        <p>Pass <code>--client &lt;client_id&gt;</code> to override base ingestion or transformation rules for specific enterprise clients without duplicating code.</p>
+        <h3 class="sub-heading">2. Category-First Multi-Tenancy & Client Scoping</h3>
+        <p>LakeForge uses a category-first directory layout (<code>configs/&lt;category&gt;/&lt;client_id&gt;/&lt;file&gt;.json</code>). When passing <code>--client client_alpha</code>, LakeForge checks the tenant directory first and automatically falls back to global defaults. Tenant data is isolated in dedicated catalogs (<code>&lt;env&gt;_&lt;client_id&gt;</code>) and landing volumes.</p>
+
+        <h3 class="sub-heading">3. Multi-Bundle Deployment Pattern (DABs)</h3>
+        <p>Each client is packaged as an independent Databricks Asset Bundle (<code>deployments/&lt;client_id&gt;/databricks.yml</code>), sharing core code via <code>sync.paths</code>. Deploying or upgrading one client never affects other tenants.</p>
+
+        <h3 class="sub-heading">4. Centralized Data Protection & PII Masking</h3>
+        <p>Configured in <code>configs/governance/data_protection.json</code>: Column-level PII policies apply dynamic SHA-256 or redaction masks and row-level filters at the Unity Catalog level based on the querying user's security group.</p>
+
+        <h3 class="sub-heading">5. CI/CD Branch Policy Guardrails</h3>
+        <p>Development is allowed in <code>dev</code> from any branch. Automated guardrails in GitHub Actions and Azure DevOps enforce that <code>test</code>, <code>staging</code>, and <code>prod</code> are deployed strictly from <code>main</code>.</p>
 
         <h3 class="sub-heading">3. The Quarantine Pattern</h3>
         <p>Never let a single bad record crash an overnight batch. Bad records are routed to a quarantine table with failure metadata, while clean records continue to Silver and Gold.</p>
@@ -1098,8 +1117,8 @@ lakeforge deploy --stage prod --component all</code></pre>
               <tr>
                 <td><strong>Phase 2</strong></td>
                 <td>v1.1.0</td>
-                <td><span style="color:var(--accent-cyan);">● Current</span></td>
-                <td>Databricks Asset Bundles, Terraform modules, Unity Catalog RBAC, PII masking.</td>
+                <td><span style="color:var(--accent-green);">● Completed</span></td>
+                <td>Multi-bundle DABs, Provisioning pipeline, Category-first configs, CI branch policies, Data protection.</td>
               </tr>
               <tr>
                 <td><strong>Phase 3</strong></td>
@@ -1124,8 +1143,13 @@ lakeforge deploy --stage prod --component all</code></pre>
         <div class="alert-box success">
           <div class="alert-icon">🎉</div>
           <div class="alert-text">
-            <strong>LakeForge 1.0.0 Official Release:</strong> Complete Medallion architecture framework with 16+ connectors, 
-            Data Quality quarantine pattern, SCD Type 1 & 2 merges, Trust Engine, and LakeForge CLI.
+            <strong>LakeForge 1.1.0 Multi-Bundle & Enterprise Orchestration Release:</strong> Independent per-client Databricks Asset Bundles (<code>deployments/&lt;client_id&gt;/</code>), automated environment & volume provisioning (<code>SETUP_Environment_Provisioning.ipynb</code>), category-first client overrides, centralized data protection (<code>data_protection.json</code>), serverless Databricks runtime compatibility, and strict CI/CD branch guardrails.
+          </div>
+        </div>
+        <div class="alert-box info">
+          <div class="alert-icon">📦</div>
+          <div class="alert-text">
+            <strong>LakeForge 1.0.0 Initial Release:</strong> Medallion architecture framework with 16+ connectors, Data Quality quarantine pattern, SCD Type 1 & 2 merges, Trust Engine, and CLI.
           </div>
         </div>
         <p>LakeForge follows <a href="https://semver.org" target="_blank" class="inline-link">Semantic Versioning 2.0.0</a>. Read the complete changelog in <a href="docs/releases.md" class="inline-link">Release Notes</a>.</p>

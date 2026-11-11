@@ -293,3 +293,63 @@ scd2_manager.merge_scd2(
   }
 }
 ```
+
+
+---
+
+## 🛡️ 8. Data Protection & Tag-Based Masking (`configs/governance/data_protection.json`)
+
+```json
+{
+  "pii_policies": {
+    "tags": {
+      "pii_restricted": {
+        "description": "Restricted personally identifiable information",
+        "masking_rule": "SHA256"
+      },
+      "financial_confidential": {
+        "description": "Card numbers and bank account references",
+        "masking_rule": "REDACT_FULL"
+      }
+    },
+    "column_tags": {
+      "sales": {
+        "customer_email": ["pii_restricted"],
+        "credit_card": ["financial_confidential"]
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🏢 9. Per-Client Independent Databricks Asset Bundle (`deployments/client_alpha/databricks.yml`)
+
+```yaml
+bundle:
+  name: lakeforge-client-alpha
+
+include:
+  - resources/*.yml
+  - resources/*.json
+
+sync:
+  paths:
+    - "../../pipelines"
+    - "../../configs"
+    - "../../lakeforge"
+
+targets:
+  dev:
+    workspace:
+      root_path: ~/.lakeforge/${bundle.name}
+  test:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/test
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/prod
+```
