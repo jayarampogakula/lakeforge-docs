@@ -35,9 +35,14 @@ Databricks' recommended multi-bundle pattern: **one repo, one bundle per deploym
 lakeforge/
 ├── databricks.yml                              # MAIN bundle (global medallion job)
 ├── deployments/                                # PER-CLIENT bundles (one independent bundle per client)
+│   ├── _template/                              # CLIENT BLUEPRINT (starter bundle for onboarding new clients)
+│   │   ├── databricks.yml                      # Template bundle definition
+│   │   └── resources/
+│   │       └── environment_setup.job.yml       # First-run provisioning job
 │   └── client_alpha/
 │       ├── databricks.yml                      # CLIENT bundle (independent)
 │       └── resources/
+│           ├── environment_setup.job.yml       # Mandatory client provisioning job
 │           ├── client_alpha_etl_job.yml        # provisioning(client_alpha) -> bronze -> silver -> views -> governance
 │           └── client_alpha_views_job.json     # on-demand views refresh (JSON works alongside YML)
 └── infrastructure/
@@ -45,11 +50,56 @@ lakeforge/
         └── lakeforge_global_job.yml            # provisioning(env) -> bronze -> silver -> gold -> views -> governance
 ```
 
-### Adding a New Client
-1. Copy `deployments/client_alpha/` to `deployments/<new_client>/`.
-2. Change the `client_id` and job names in `databricks.yml` and resource definitions.
-3. Add client-specific configurations under `configs/<type>/<new_client>/`.
-4. **Zero changes** are needed in the main bundle.
+### Adding a New Client (Onboarding Runbook)
+1. Copy the blueprint template:
+   ```bash
+   cp -r deployments/_template deployments/<new_client>
+   ```
+2. In `deployments/<new_client>/databricks.yml`, change `name: lakeforge-client-template` to `name: lakeforge-<new_client>`.
+3. Add client-specific configurations under `configs/<category>/<new_client>/`.
+4. Run stage synchronization to generate all environment targets:
+   ```bash
+   lakeforge sync-stages
+   ```
+5. Deploy and run the first-time provisioning job:
+   ```bash
+   cd deployments/<new_client>
+   databricks bundle deploy -t dev
+   databricks bundle run environment_setup -t dev
+   ```
+6. **Zero changes** are needed in the main global bundle!
+
+---
+
+## 0.7 Stage Registry & Multi-Account Deployment
+
+Stage names are defined in ONE single source of truth: **`configs/environments/env_settings.json`**.
+
+### Multi-Account Stages (`workspace_host`)
+To host a stage (e.g. `test` or `prod`) in a **different Databricks workspace / cloud account**:
+1. Add `workspace_host` in that stage's object in `env_settings.json`:
+   ```json
+   "prod": {
+     "workspace_host": "https://dbc-enterprise-prod.cloud.databricks.com",
+     "catalogs": { ... }
+   }
+   ```
+2. Run `lakeforge sync-stages` — automatically injects the `host:` property into every bundle target for that stage.
+3. **Never put secrets in `env_settings.json`** — credentials must remain in CI secrets / variable groups.
+4. **Service Principal OAuth (Recommended)**: Set `DATABRICKS_<STAGE>_CLIENT_ID` + `DATABRICKS_<STAGE>_CLIENT_SECRET`.
+
+---
+
+## 0.8 Mirrored CI/CD Pipeline Suite
+
+LakeForge provides an identical set of four automated and manual workflows in both **GitHub Actions** (`.github/workflows/`) and **Azure DevOps** (`azure-pipelines/workflows/`):
+
+| Workflow | Trigger | Description |
+|---|---|---|
+| **`ci_cd.yml`** | Push to PR / merge to `main` | Linting, unit tests, integration tests, stage drift check (`sync-stages --check`), and automated deployment. |
+| **`pr_review.yml`** | Pull request open/synchronize | Automated PR code reviewer, AST duplicate function detection, test coverage validation. |
+| **`dab_deploy.yml`** | Manual dispatch / schedule | Deploys bundle targets with optional `run_setup` first-deployment provisioning. |
+| **`dab_export.yml`** | Manual dispatch | Reverse-engineers live Databricks Workflows into version-controlled DAB manifests. |
 
 ### Deploying a Single Client
 - **Deploy Global Bundle**:

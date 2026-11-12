@@ -44,21 +44,30 @@ This roadmap highlights completed milestones, current engineering priorities, an
 
 ---
 
-## 🚀 Phase 2: Enterprise Scaling & Multi-Bundle Orchestration (v1.1.0)
+## 🚀 Phase 2: Enterprise Scaling, Multi-Bundle & Governance (v1.1.0 - v1.2.0)
 
 - [x] **Multi-Bundle Architecture (DABs)**:
   - Independent client bundles under `deployments/<client_id>/databricks.yml` and shared root `databricks.yml`.
-  - Selective single-client deployment without cross-tenant impact.
+  - Client onboarding blueprint template in `deployments/_template/`.
+- [x] **Central Stage Registry & Multi-Account Architecture**:
+  - `configs/environments/env_settings.json` drives bundles, CLI, notebooks, and CI/CD.
+  - `lakeforge sync-stages` CLI command for bundle targets synchronization.
+  - Multi-account / multi-workspace routing via `workspace_host` and Service Principal M2M OAuth.
+- [x] **Modular Python Libraries & External SQL**:
+  - Modular PySpark functions in `lakeforge.transformations.*` and `lakeforge.aggregations.*`.
+  - External `.sql` file integration (`query_file`).
+- [x] **Automated PR Reviewer & Duplicate Detector**:
+  - `lakeforge pr-review` CLI tool with AST duplicate function detection.
 - [x] **Automated Environment & Volume Provisioning**:
   - `SETUP_Environment_Provisioning.ipynb` dynamically builds `<env>_bronze`, `<env>_silver`, `<env>_gold`, `<env>_quarantine`, `<env>_<client>`, and landing volumes.
 - [x] **Category-First Multi-Tenant Scoping**:
   - Clean config hierarchy (`configs/<type>/<client_id>/<file>.json`) with automatic fallback to global defaults.
+- [x] **Comprehensive Configuration Templates**:
+  - `template_all_options.json` and documentation guide across all configuration directories.
 - [x] **Centralized Governance & Data Protection**:
   - Automated Unity Catalog RBAC grants and `data_protection.json` tag-based PII masking policies (SHA-256, redaction).
-- [x] **CI/CD Branch Policy Guardrails**:
-  - Enforcement in GitHub Actions and Azure DevOps: `dev` from any branch; `test`, `staging`, `prod` from `main` only.
-- [x] **Serverless Databricks Runtime Compatibility**:
-  - Dynamic `/Workspace` path auto-detection for serverless notebook imports.
+- [x] **CI/CD Branch Policy Guardrails & Mirrored Workflows**:
+  - 4 mirrored workflows (`ci_cd`, `pr_review`, `dab_deploy`, `dab_export`) across GitHub Actions and Azure DevOps.
 - [ ] **Enhanced Streaming Connectors**:
   - Native Azure Event Hubs and Google Cloud Pub/Sub connectors.
   - Micro-batch trigger tuning and backpressure telemetry.

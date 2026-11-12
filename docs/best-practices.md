@@ -88,3 +88,20 @@ Production-tested architectural, operational, and performance guidelines for ope
 1. **Local & Pull Request Verification**: Run `lakeforge validate configs --env dev` and `pytest tests/unit_tests/` in pull request checks.
 2. **Staging Dry Run**: Use `lakeforge deploy --stage staging --dry-run` to preview all schema changes, grants, and bundle assets before deploying.
 3. **Automated Rollback**: Tag git commits (`v1.0.0`, `v1.0.1`) and maintain versioned Databricks Asset Bundles so you can roll back within seconds if regressions occur.
+
+
+---
+
+## 🔒 7. Stage Registry & Credential Hardening
+
+- **Never Commit Credentials to `env_settings.json`**: This file is checked into version control and synced to `/Workspace/Shared/...` where it is readable by all workspace users. Keep all passwords, tokens, and OAuth secrets in CI secrets (`DATABRICKS_<STAGE>_CLIENT_ID` / `_CLIENT_SECRET`) or Databricks Secret Scopes.
+- **Prefer Service Principal M2M OAuth over PAT**: Service Principal OAuth secret pairs do not expire after 90 days and automatically exchange for short-lived ephemeral bearer tokens at runtime.
+- **Always Run `sync-stages --check` in CI**: Ensure no bundle target has drifted from the central stage registry defined in `env_settings.json`.
+
+---
+
+## 🐍 8. Modular Python Code over Inline JSON SQL
+
+- **Avoid Monolithic JSON SQL Strings**: When business logic exceeds 5 lines of SQL, extract it into a dedicated `.sql` file (`"query_file": "..."`) or a Python function (`"custom_module"`, `"custom_function"`).
+- **Package Reusable Functions in `lakeforge.transformations.generic`**: Place enterprise-wide cleaning, formatting, and mathematical routines in `generic.py` so multiple pipelines and clients can reuse them without duplication.
+- **Use `lakeforge pr-review`**: Run `lakeforge pr-review --fail-on-duplicate` in your pull request checks to prevent duplicate code and ensure test coverage for all new components.

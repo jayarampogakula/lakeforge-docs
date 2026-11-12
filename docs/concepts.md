@@ -61,11 +61,12 @@ configs/
 
 ---
 
-## 📦 3. Independent Multi-Bundle Deployment Pattern
+## 📦 3. Independent Multi-Bundle Deployment Pattern & Blueprint Template
 
 Databricks recommends deploying independent bundles per tenant. LakeForge structures bundles to isolate deployments:
 
 - **Global Main Bundle** (`databricks.yml` at root): Deploys the shared framework and global workflows (`infrastructure/databricks/resources/lakeforge_global_job.yml`).
+- **Client Blueprint Template** (`deployments/_template/`): A standardized blueprint ready for instant cloning to onboard new clients. Contains starter `databricks.yml` and `environment_setup.job.yml`.
 - **Per-Client Bundles** (`deployments/<client_id>/databricks.yml`): Independent bundles containing client-specific ETL jobs and view refresh triggers.
 - **Shared Code Sync**: Client bundles sync the root `pipelines/`, `configs/`, and `lakeforge/` packages without code duplication via `sync.paths: ["../../pipelines", "../../configs", "../../lakeforge"]`.
 
@@ -73,7 +74,60 @@ Deploying or modifying one client never triggers downtime or updates on another 
 
 ---
 
-## 🔒 4. Data Protection & Centralized PII Masking
+## 🎛️ 4. Central Stage Registry & Multi-Account Architecture
+
+Stage names, target catalogs, and schemas are defined in a single source of truth: **`configs/environments/env_settings.json`**.
+
+### Key Architectural Benefits:
+1. **Zero Hardcoded Stages**: The CLI (`lakeforge deploy`), notebook environment widgets, and CI/CD workflows read their available stages dynamically from `env_settings.json`.
+2. **Automated Bundle Target Synchronization**: Running `lakeforge sync-stages` automatically regenerates the `targets:` blocks in root `databricks.yml` and all `deployments/*/databricks.yml` files.
+3. **Multi-Account & Multi-Workspace Routing**: A stage can be hosted in an entirely different Databricks account/workspace simply by defining `workspace_host` in that stage's JSON configuration:
+   ```json
+   "prod": {
+     "workspace_host": "https://dbc-enterprise-prod.cloud.databricks.com",
+     "catalogs": { ... }
+   }
+   ```
+4. **Credential Security**: **Never store secrets in `env_settings.json`** (as it is checked into git and synced to `/Workspace/Shared/...`). Only non-secret settings belong in the file.
+
+---
+
+## 🔑 5. Service Principal OAuth (M2M) vs PAT Authentication
+
+LakeForge supports enterprise machine-to-machine (M2M) OAuth credentials across all CI/CD deployment pipelines:
+
+- **Service Principal OAuth (Recommended)**: Pass client credentials via `DATABRICKS_<STAGE>_CLIENT_ID` and `DATABRICKS_<STAGE>_CLIENT_SECRET`. The Databricks CLI automatically exchanges them for short-lived ephemeral bearer tokens.
+- **Personal Access Tokens (PAT)**: Supported via `DATABRICKS_<STAGE>_TOKEN` for backwards compatibility.
+- **Precedence**: If both are present, Service Principal OAuth takes precedence over static PATs.
+
+---
+
+## 🐍 6. Extensible Python Function Libraries & External SQL Support
+
+LakeForge avoids inline SQL and config bloat by supporting modular Python libraries and external SQL scripts:
+
+### Modular Python Functions
+Define reusable PySpark logic in Python modules (e.g. `lakeforge/transformations/generic.py`, `lakeforge/transformations/custom.py`, or tenant-specific `lakeforge/transformations/<client_id>/custom.py`):
+```json
+{
+  "custom_module": "lakeforge.transformations.client_alpha.custom",
+  "custom_function": "clean_client_alpha_sales",
+  "params": {"tax_rate": 0.08}
+}
+```
+
+### External SQL Files
+Rather than embedding multi-line SQL queries inside JSON strings, point directly to external `.sql` files:
+```json
+{
+  "query_file": "configs/queries/gold_revenue_summary.sql"
+}
+```
+The LakeForge execution engine resolves the query file relative to the repository root at runtime.
+
+---
+
+## 🔒 7. Data Protection & Centralized PII Masking
 
 Data privacy is governed centrally through `configs/governance/data_protection.json`:
 - **Tag-Based Column Masking**: Masks sensitive columns dynamically in Unity Catalog (e.g., credit cards, tax IDs, emails, SSNs) using SHA-256 hashes or redacting masks based on the querying user's group.
@@ -85,9 +139,9 @@ Data privacy is governed centrally through `configs/governance/data_protection.j
 
 ---
 
-## 🚦 5. Branching & Deployment Policy Enforcement
+## 🚦 8. Branching & Deployment Policy Enforcement
 
-To ensure production stability, LakeForge implements strict branch guardrails enforced in CI/CD pipelines (`.github/workflows/ci_cd.yml` and `azure-pipelines.yml`):
+To ensure production stability, LakeForge implements strict branch guardrails enforced in CI/CD pipelines (`.github/workflows/ci_cd.yml` and `azure-pipelines/workflows/ci_cd.yml`):
 
 | Target Environment | Permitted Source Branch | Trigger | Bundle Mode |
 |---|---|---|---|
@@ -100,7 +154,7 @@ If a developer attempts to deploy to `test`, `staging`, or `prod` from a feature
 
 ---
 
-## 🔄 6. Schema Evolution & Drift Policies
+## 🔄 9. Schema Evolution & Drift Policies
 
 When upstream schemas change unexpectedly, LakeForge protects downstream integrity through configurable **Drift Policies**:
 
@@ -123,7 +177,7 @@ When upstream schemas change unexpectedly, LakeForge protects downstream integri
 
 ---
 
-## 🛡️ 7. Data Quality Gates & Quarantine Pattern
+## 🛡️ 10. Data Quality Gates & Quarantine Pattern
 
 LakeForge isolates invalid records without crashing batches:
 
@@ -148,14 +202,14 @@ Silver Delta Table    Quarantine Delta Table
 
 ---
 
-## ⏳ 8. Slowly Changing Dimensions (SCD Type 1 vs Type 2)
+## ⏳ 11. Slowly Changing Dimensions (SCD Type 1 vs Type 2)
 
 - **SCD Type 1 (In-Place Overwrite)**: Updates existing records in place whenever non-key attributes change.
 - **SCD Type 2 (History-Preserving)**: Maintains full historical change tracking using `effective_start_date`, `effective_end_date` (defaulting to `9999-12-31`), and `is_current` boolean flags.
 
 ---
 
-## 🎯 9. Trust Score Formulation
+## 🎯 12. Trust Score Formulation
 
 The LakeForge **Trust Engine** grades pipeline execution health using a composite score from `0%` to `100%`:
 

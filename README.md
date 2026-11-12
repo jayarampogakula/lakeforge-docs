@@ -48,6 +48,7 @@ In addition to the 11 core sections above, this repository also houses the compr
 | 🧩 **Module Guide** | Python package internals, functions, and architecture | [`docs/MODULE_GUIDE.md`](docs/MODULE_GUIDE.md) |
 | 🧪 **Testing Suite** | Unit test suite, integration tests, and CI/CD validation | [`docs/testing/TESTING_GUIDE.md`](docs/testing/TESTING_GUIDE.md) |
 | 📖 **Implementation Guide** | Complete implementation architecture and design decisions | [`docs/getting-started/Implementation_guide.md`](docs/getting-started/Implementation_guide.md) |
+| ⚙️ **Config Dictionary & Templates** | Comprehensive guide & templates for Ingestion, DQ, Transforms, Aggregations | [`docs/configs/README.md`](docs/configs/README.md) |
 | 🔄 **Orchestration Guide** | Multi-bundle DABs, CI branch guardrails, Airflow, and Workflows | [`docs/architecture/orchestration.md`](docs/architecture/orchestration.md) |
 | 🌊 **Data Flow Architecture** | Stage 0 Provisioning through Views and Centralized Data Protection | [`docs/architecture/data_flow.md`](docs/architecture/data_flow.md) |
 | 💻 **API Reference Manual** | Full HTML function and module reference manual | [`docs/index.html`](docs/index.html) |

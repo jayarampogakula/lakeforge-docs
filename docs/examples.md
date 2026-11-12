@@ -353,3 +353,106 @@ targets:
     workspace:
       root_path: /Workspace/Shared/.bundle/${bundle.name}/prod
 ```
+
+
+---
+
+## 🐍 10. Custom Python Transformation (`lakeforge/transformations/client_alpha/custom.py`)
+
+### Python Transformation Function
+```python
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+
+def clean_client_alpha_sales(df: DataFrame, tax_rate: float = 0.08) -> DataFrame:
+    """Custom regional cleansing and tax computation for Client Alpha."""
+    return (
+        df.filter(F.col("order_status") != "VOID")
+          .withColumn("net_amount", F.round(F.col("gross_amount") * (1 + tax_rate), 2))
+          .withColumn("client_tenant_tag", F.lit("client_alpha"))
+    )
+```
+
+### Configuration Calling Custom Python (`configs/transformations/client_alpha/sales_clean.json`)
+```json
+{
+  "source_table": "bronze.client_alpha.sales",
+  "target_table": "silver.client_alpha.sales_clean",
+  "custom_module": "lakeforge.transformations.client_alpha.custom",
+  "custom_function": "clean_client_alpha_sales",
+  "params": {
+    "tax_rate": 0.085
+  }
+}
+```
+
+---
+
+## 🥇 11. Custom Python Gold Mart Aggregation (`lakeforge/aggregations/client_alpha/custom.py`)
+
+### Python Aggregation Function
+```python
+from typing import Dict
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+
+def compute_client_alpha_daily_mart(source_dfs: Dict[str, DataFrame]) -> DataFrame:
+    """Aggregates sales and customer data into a high-level executive mart."""
+    sales_df = source_dfs["sales"]
+    customers_df = source_dfs["customers"]
+
+    return (
+        sales_df.join(customers_df, on="customer_id", how="inner")
+                .groupBy("sale_date", "region", "tier")
+                .agg(
+                    F.count("order_id").alias("total_orders"),
+                    F.sum("net_amount").alias("total_revenue"),
+                    F.round(F.avg("net_amount"), 2).alias("avg_order_value")
+                )
+    )
+```
+
+---
+
+## 📜 12. External SQL File Support
+
+Instead of embedding multi-line SQL strings inside JSON, reference an external `.sql` file:
+
+### Configuration (`configs/aggregations/sales_summary.json`)
+```json
+{
+  "target_table": "gold.marts.sales_summary",
+  "query_file": "configs/queries/gold_sales_summary.sql",
+  "merge_strategy": "overwrite"
+}
+```
+
+---
+
+## 🎛️ 13. Stage Registry & Multi-Account Host Configuration (`configs/environments/env_settings.json`)
+
+```json
+{
+  "dev": {
+    "catalogs": {
+      "lakehouse": {
+        "bronze_schema": "bronze",
+        "silver_schema": "silver",
+        "gold_schema": "gold",
+        "monitoring_schema": "monitoring"
+      }
+    }
+  },
+  "prod": {
+    "workspace_host": "https://dbc-enterprise-prod.cloud.databricks.com",
+    "catalogs": {
+      "lakehouse_prod": {
+        "bronze_schema": "bronze",
+        "silver_schema": "silver",
+        "gold_schema": "gold",
+        "monitoring_schema": "monitoring"
+      }
+    }
+  }
+}
+```

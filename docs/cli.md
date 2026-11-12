@@ -137,7 +137,7 @@ lakeforge run --layer governance --env prod --dry-run
 
 ## 📦 Subcommand: `lakeforge deploy`
 
-Packages and deploys LakeForge configurations, Databricks workflows, views, and governance policies to a target environment.
+Packages and deploys LakeForge configurations, Databricks workflows, views, and governance policies to a target environment stage. Stages are dynamically resolved from the central Stage Registry (`configs/environments/env_settings.json`).
 
 ### Syntax
 ```bash
@@ -145,9 +145,9 @@ lakeforge deploy --stage <stage> [options]
 ```
 
 ### Options
-- `--stage`, `-s`: Target deployment stage (`dev`, `test`, `staging`, `prod`). **Required**.
+- `--stage`, `-s`: Target deployment stage (e.g. `dev`, `test`, `staging`, `prod`). **Required**. Read dynamically from `env_settings.json`.
 - `--component`: Component to deploy (`all`, `pipelines`, `views`, `governance`, `package`; default: `all`).
-- `--client`, `-c`: Client ID / Tenant scope (optional).
+- `--client`, `-c`: Client ID / Tenant scope (e.g. `client_alpha`). Deploys tenant-specific bundle resources.
 - `--config-dir`: Configuration root directory (default: `configs`).
 - `--target-workspace`: Target Databricks workspace path.
 - `--dry-run`: Simulates the deployment and reports actions without applying changes.
@@ -160,50 +160,80 @@ lakeforge deploy --stage staging --dry-run
 # Deploy all components to production
 lakeforge deploy --stage prod --component all
 
+# Deploy only client_alpha's bundle resources to dev
+lakeforge deploy --stage dev --client client_alpha
+
 # Deploy only governance and view security to test
 lakeforge deploy --stage test --component governance
 ```
 
 ---
 
-## 🤖 CI/CD Integration
+## 🔄 Subcommand: `lakeforge sync-stages`
 
-### Azure DevOps Pipeline Example (`azure-pipelines.yml`)
+Synchronizes bundle stage targets across the repository from the central Stage Registry (`configs/environments/env_settings.json`). Regenerates `targets:` blocks in:
+1. Root `databricks.yml`
+2. Client template blueprint (`deployments/_template/databricks.yml`)
+3. Every active tenant bundle (`deployments/<client_id>/databricks.yml`)
 
-```yaml
-trigger:
-  branches:
-    include:
-      - main
-      - release/*
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.10'
-
-- script: |
-    python -m pip install --upgrade pip
-    pip install -e ".[dev]"
-  displayName: 'Install LakeForge and Dependencies'
-
-- script: |
-    lakeforge validate configs --env dev
-    lakeforge validate configs --env staging
-    lakeforge validate configs --env prod
-  displayName: 'Validate Pipeline Configurations'
-
-- script: |
-    pytest tests/unit_tests/
-  displayName: 'Run Unit Test Suite'
-
-- script: |
-    lakeforge deploy --stage staging --dry-run
-  displayName: 'Verify Staging Bundle Deployment'
+### Syntax
+```bash
+lakeforge sync-stages [--check] [--config-dir <dir>]
 ```
+
+### Options
+- `--check`: Dry-run mode: checks for stage drift and reports un-synchronized bundle targets without writing files. Exits with code 1 if drift exists (ideal for CI/CD checks).
+- `--config-dir`: Path to configuration directory containing `environments/env_settings.json` (default: `configs`).
+
+### Examples
+```bash
+# Synchronize all Databricks Asset Bundle targets with env_settings.json
+lakeforge sync-stages
+
+# Run drift check in CI/CD pipeline
+lakeforge sync-stages --check
+```
+
+---
+
+## 🧐 Subcommand: `lakeforge pr-review`
+
+Automated pull request code reviewer and quality gatekeeper. Performs:
+- **AST-based duplicate function detection**: Detects identical or copy-pasted Python logic across modules.
+- **Test coverage verification**: Asserts that new features and connectors include corresponding unit/integration tests.
+- **Branch policy enforcement**: Verifies that non-dev deployments target `main` only.
+- **Configuration schema validation**: Ensures all modified JSON files strictly adhere to schema definitions.
+
+### Syntax
+```bash
+lakeforge pr-review [--base-ref <ref>] [--repo-root <dir>] [--post-comment] [--fail-on-duplicate]
+```
+
+### Options
+- `--base-ref`: Base git reference to compare diff against (default: `origin/main`).
+- `--repo-root`: Repository root directory (default: `.`).
+- `--post-comment`: Posts automated markdown review summary directly to GitHub / Azure DevOps PR.
+- `--fail-on-duplicate`: Fails the CI job with exit code 1 if duplicate function implementations are detected.
+
+### Examples
+```bash
+# Run local code review against main
+lakeforge pr-review
+
+# Run in CI workflow with failure on duplicate functions
+lakeforge pr-review --base-ref origin/main --fail-on-duplicate --post-comment
+```
+
+---
+
+## 🤖 CI/CD Integration & Workflow Suite
+
+LakeForge provides 4 mirrored, production-ready workflows across both **GitHub Actions** (`.github/workflows/`) and **Azure DevOps** (`azure-pipelines/workflows/`):
+
+1. **`ci_cd.yml`**: Linting, unit tests, integration tests, branch guardrails, and automated deployment.
+2. **`pr_review.yml`**: Automated PR code review, duplicate function detection, and config validation.
+3. **`dab_deploy.yml`**: Databricks Asset Bundle deployment with optional `run_setup` initial provisioning.
+4. **`dab_export.yml`**: Reverse-engineers live Databricks Workflows into version-controlled DAB manifests.
 
 ### GitHub Actions Workflow Example (`.github/workflows/ci_cd.yml`)
 
@@ -212,7 +242,7 @@ name: LakeForge CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev, "feature/**", "bugfix/**" ]
   pull_request:
     branches: [ main ]
 
@@ -233,6 +263,39 @@ jobs:
         run: |
           lakeforge validate configs --env dev
           lakeforge validate configs --env prod
+      - name: Stage Registry Drift Check
+        run: lakeforge sync-stages --check
       - name: Run Unit Tests
         run: pytest tests/unit_tests/
+```
+
+### Azure DevOps Pipeline Example (`azure-pipelines/workflows/ci_cd.yml`)
+
+```yaml
+trigger:
+  branches:
+    include:
+      - main
+      - dev
+      - feature/*
+      - bugfix/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.10'
+
+- script: |
+    python -m pip install --upgrade pip
+    pip install -e ".[dev]"
+  displayName: 'Install LakeForge and Dependencies'
+
+- script: |
+    lakeforge validate configs --env dev
+    lakeforge sync-stages --check
+    pytest tests/unit_tests/
+  displayName: 'Validate and Test'
 ```

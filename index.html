@@ -634,7 +634,7 @@
         </svg>
         <span class="brand-title">LakeForge</span>
       </a>
-      <span class="version-badge">v1.1.0</span>
+      <span class="version-badge">v1.2.0</span>
     </div>
 
     <div class="nav-actions">
@@ -944,7 +944,16 @@ lakeforge --version</code></pre>
         <h3 class="sub-heading">4. Centralized Data Protection & PII Masking</h3>
         <p>Configured in <code>configs/governance/data_protection.json</code>: Column-level PII policies apply dynamic SHA-256 or redaction masks and row-level filters at the Unity Catalog level based on the querying user's security group.</p>
 
-        <h3 class="sub-heading">5. CI/CD Branch Policy Guardrails</h3>
+        <h3 class="sub-heading">5. Stage Registry & Multi-Account Architecture</h3>
+        <p>Stage names, target catalogs, schemas, and optional multi-account <code>workspace_host</code> URLs are defined in <code>configs/environments/env_settings.json</code>. The CLI command <code>lakeforge sync-stages</code> automatically updates Databricks Asset Bundle targets across the repository.</p>
+
+        <h3 class="sub-heading">6. Modular Python Functions & External SQL</h3>
+        <p>Complex business logic is encapsulated in modular Python functions (<code>lakeforge.transformations.*</code> and <code>lakeforge.aggregations.*</code>) or external <code>.sql</code> files (<code>query_file</code>), keeping JSON pipeline configurations clean and declarative.</p>
+
+        <h3 class="sub-heading">7. Automated PR Reviewer & Quality Gate</h3>
+        <p>The <code>lakeforge pr-review</code> tool performs AST-based duplicate function detection, test coverage verification, and schema integrity validation during pull requests.</p>
+
+        <h3 class="sub-heading">8. CI/CD Branch Policy Guardrails</h3>
         <p>Development is allowed in <code>dev</code> from any branch. Automated guardrails in GitHub Actions and Azure DevOps enforce that <code>test</code>, <code>staging</code>, and <code>prod</code> are deployed strictly from <code>main</code>.</p>
 
         <h3 class="sub-heading">3. The Quarantine Pattern</h3>
@@ -974,9 +983,16 @@ lakeforge run --layer silver --name customers_clean --source bronze.raw.customer
 lakeforge run --layer gold --name daily_revenue --env prod
 lakeforge run --layer governance --env prod --dry-run
 
-# 4. Multi-Stage Deployment
+# 4. Multi-Stage Deployment (Registry-driven stages: dev, test, staging, prod)
 lakeforge deploy --stage staging --dry-run
-lakeforge deploy --stage prod --component all</code></pre>
+lakeforge deploy --stage prod --client client_alpha
+
+# 5. Stage Registry Synchronization
+lakeforge sync-stages
+lakeforge sync-stages --check
+
+# 6. Automated PR Reviewer & Duplicate Function Detection
+lakeforge pr-review --fail-on-duplicate --post-comment</code></pre>
         </div>
       </section>
 
@@ -1116,9 +1132,9 @@ lakeforge deploy --stage prod --component all</code></pre>
               </tr>
               <tr>
                 <td><strong>Phase 2</strong></td>
-                <td>v1.1.0</td>
+                <td>v1.2.0</td>
                 <td><span style="color:var(--accent-green);">● Completed</span></td>
-                <td>Multi-bundle DABs, Provisioning pipeline, Category-first configs, CI branch policies, Data protection.</td>
+                <td>Stage Registry, Multi-Account DABs, sync-stages, PR Reviewer, Modular Python & External SQL libraries.</td>
               </tr>
               <tr>
                 <td><strong>Phase 3</strong></td>
@@ -1141,7 +1157,13 @@ lakeforge deploy --stage prod --component all</code></pre>
       <section id="releases">
         <h2 class="section-heading">🏷️ Releases</h2>
         <div class="alert-box success">
-          <div class="alert-icon">🎉</div>
+          <div class="alert-icon">🚀</div>
+          <div class="alert-text">
+            <strong>LakeForge 1.2.0 Enterprise Release:</strong> Central Stage Registry (<code>env_settings.json</code>), Multi-Account stage routing (<code>workspace_host</code>), <code>lakeforge sync-stages</code>, Automated PR Reviewer (<code>lakeforge pr-review</code>) with AST duplicate detection, modular Python transformation & aggregation libraries (<code>generic.py</code>, <code>custom.py</code>), external SQL file support, and mirrored GitHub Actions + Azure DevOps workflows.
+          </div>
+        </div>
+        <div class="alert-box info">
+          <div class="alert-icon">📦</div>
           <div class="alert-text">
             <strong>LakeForge 1.1.0 Multi-Bundle & Enterprise Orchestration Release:</strong> Independent per-client Databricks Asset Bundles (<code>deployments/&lt;client_id&gt;/</code>), automated environment & volume provisioning (<code>SETUP_Environment_Provisioning.ipynb</code>), category-first client overrides, centralized data protection (<code>data_protection.json</code>), serverless Databricks runtime compatibility, and strict CI/CD branch guardrails.
           </div>

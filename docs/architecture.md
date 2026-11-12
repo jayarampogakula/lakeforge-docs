@@ -103,6 +103,8 @@ Cleanses, enriches, and structures data into reliable operational datasets:
   - `deduplicate`: Windowed row ranking based on primary keys and ordering timestamps.
   - `rename` & `drop`: Field mapping and cleanup.
   - `join`: Dynamic catalog joins with foreign dimension tables.
+  - **Modular Python Libraries**: Dynamic invocation of reusable column or DataFrame PySpark functions (`lakeforge.transformations.generic`, `custom`, and `<client_id>.custom`).
+  - **External SQL Files**: Clean separation of complex query logic into `.sql` files (`query_file`).
 - **Slowly Changing Dimensions (SCD Type 1 & 2)**:
   - `SCD Type 1`: Overwrites existing records on primary key match.
   - `SCD Type 2`: Retains full version history by managing `effective_start_date`, `effective_end_date` (set to `9999-12-31` for active rows), and boolean `is_current` flags.
@@ -110,6 +112,7 @@ Cleanses, enriches, and structures data into reliable operational datasets:
 ### 4. Gold Layer: Curated Marts (`lakeforge.gold`)
 Aggregates cleansed Silver tables into optimized business marts:
 - **Declarative Aggregations**: Generates SQL aggregation queries automatically from JSON specifications (`groupBy` keys, join predicates, metric expressions like `SUM`, `AVG`, `COUNT`, `MIN`, `MAX`).
+- **Custom Python Marts**: Executes advanced multidimensional rollup logic via custom Python functions (`lakeforge.aggregations.custom` and `<client_id>.custom`).
 - **Liquid Clustering / Z-Ordering**: Automatic partition optimization for fast query response.
 
 ### 5. Categorized Views Layer (`lakeforge.views`)
@@ -120,7 +123,7 @@ A decoupled semantic layer that builds logical SQL views without replicating phy
 
 ---
 
-## 🏢 Multi-Bundle Deployment Layout
+## 🏢 Multi-Bundle Deployment Layout & Blueprint Template
 
 LakeForge follows the Databricks recommended multi-bundle architecture: **one repository, one bundle per deployment unit**:
 
@@ -128,18 +131,44 @@ LakeForge follows the Databricks recommended multi-bundle architecture: **one re
 lakeforge/
 ├── databricks.yml                              # MAIN bundle (global medallion job)
 ├── deployments/                                # PER-CLIENT bundles (one independent bundle per client)
+│   ├── _template/                              # CLIENT BLUEPRINT (starter bundle for onboarding new clients)
+│   │   ├── databricks.yml                      # Template bundle definition
+│   │   └── resources/
+│   │       └── environment_setup.job.yml       # First-run provisioning job
 │   └── client_alpha/
 │       ├── databricks.yml                      # CLIENT bundle (independent)
 │       └── resources/
+│           ├── environment_setup.job.yml       # Mandatory client provisioning job
 │           ├── client_alpha_etl_job.yml        # Provisioning -> Bronze -> Silver -> Views -> Governance
 │           └── client_alpha_views_job.json     # On-demand views refresh
 └── infrastructure/
     ├── databricks/resources/
     │   └── lakeforge_global_job.yml            # Global pipeline workflow
     ├── docker/                                 # Isolated container runtimes
-    ├── terraform/                              # Terraform Databricks Workspace & Job IaC
-    └── workflows/                              # Orchestration guidelines
+    └── terraform/                              # Terraform Databricks Workspace & Job IaC
 ```
+
+---
+
+## 🎛️ Stage Registry & Multi-Account Architecture
+
+Stage names, target catalogs, and schemas are defined in a single source of truth: **`configs/environments/env_settings.json`**.
+
+- **Single Source of Truth**: The CLI (`lakeforge deploy`), notebook environment widgets, and CI/CD workflows read their available stages dynamically from `env_settings.json`.
+- **Target Synchronization (`lakeforge sync-stages`)**: Automatically updates `targets:` blocks in root `databricks.yml` and all `deployments/*/databricks.yml`.
+- **Multi-Account Stages (`workspace_host`)**: Route specific stages (e.g. `prod`) to separate Databricks accounts by setting `workspace_host` in that stage's JSON configuration.
+- **Service Principal M2M OAuth**: Authenticate CI/CD using `DATABRICKS_<STAGE>_CLIENT_ID` and `DATABRICKS_<STAGE>_CLIENT_SECRET`.
+
+---
+
+## 🤖 Mirrored CI/CD Suite & Automated PR Reviewer
+
+LakeForge provides an identical set of four automated and manual workflows in both **GitHub Actions** (`.github/workflows/`) and **Azure DevOps** (`azure-pipelines/workflows/`):
+
+- **`ci_cd.yml`**: Sequential unit tests -> integration tests -> deploy pipeline. Enforces branch policy (`dev` on any branch, `test`/`staging`/`prod` on `main` only).
+- **`pr_review.yml`**: Automated code reviewer (`lakeforge pr-review`) with AST-based duplicate function detection and test coverage enforcement.
+- **`dab_deploy.yml`**: DAB bundle deployment with optional `run_setup` first-deployment provisioning.
+- **`dab_export.yml`**: Reverse-engineers live Databricks Workflows into version-controlled DAB manifests.
 
 ---
 

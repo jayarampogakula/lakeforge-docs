@@ -53,10 +53,10 @@ However, if you set critical rules with `action: "abort"`, or if the overall bat
 ### Q5: How do client-specific overrides work in multi-tenant environments?
 
 **Answer:**
-When you pass `--client <client_name>` (e.g., `--client client_alpha`), the LakeForge config resolver checks:
-1. `configs/clients/<client_name>/<layer>/<file>.json`
+When you pass `--client <client_name>` (e.g., `--client client_alpha`), the LakeForge config resolver checks the category-first directory:
+1. `configs/<category>/<client_name>/<file>.json` (e.g., `configs/ingestion/client_alpha/sales.json`)
 2. If the file exists, its properties take precedence.
-3. If not found, it seamlessly falls back to the default `configs/<layer>/<file>.json`.
+3. If not found, it seamlessly falls back to the default `configs/<category>/<file>.json`.
 
 This allows you to maintain one central configuration base while customizing specific schemas, delimiters, or DQ thresholds for specific clients.
 
@@ -98,3 +98,47 @@ In Databricks notebooks:
 dbutils.library.restartPython()
 ```
 All LakeForge 1.x releases maintain backwards compatibility according to Semantic Versioning.
+
+
+---
+
+### Q9: How do I add, rename, or remove an environment stage?
+
+**Answer:**
+All stages are defined in one single file: **`configs/environments/env_settings.json`**.
+1. Edit `configs/environments/env_settings.json` to add, rename, or remove stage keys (e.g., adding `"qa"` or `"uat"`).
+2. Run `lakeforge sync-stages` from the CLI. This automatically regenerates the `targets:` block in root `databricks.yml`, `deployments/_template/databricks.yml`, and all client bundles.
+3. Commit the changes. The CLI (`lakeforge deploy`), CI/CD workflows, and notebook widgets will pick up the new stages automatically.
+
+---
+
+### Q10: How do I deploy a stage to a separate Databricks account or workspace?
+
+**Answer:**
+Add the `workspace_host` property to the target stage in `configs/environments/env_settings.json`:
+```json
+"prod": {
+  "workspace_host": "https://dbc-enterprise-prod.cloud.databricks.com",
+  "catalogs": { ... }
+}
+```
+Then run `lakeforge sync-stages`. In your CI/CD pipeline or runner, configure `DATABRICKS_PROD_CLIENT_ID` and `DATABRICKS_PROD_CLIENT_SECRET` (or `DATABRICKS_PROD_TOKEN`). LakeForge will direct the deployment to that target workspace automatically.
+
+---
+
+### Q11: How does Service Principal M2M OAuth authentication work in CI/CD?
+
+**Answer:**
+In your GitHub Actions secrets or Azure DevOps variable groups, provide:
+- `DATABRICKS_<STAGE>_CLIENT_ID` (the Service Principal UUID / Application ID)
+- `DATABRICKS_<STAGE>_CLIENT_SECRET` (the generated OAuth secret)
+
+When running `databricks bundle deploy`, the Databricks CLI natively exchanges these credentials for short-lived machine-to-machine tokens. This removes the risk of hardcoded bearer tokens expiring after 90 days.
+
+---
+
+### Q12: How do I use custom Python functions or external SQL in my pipelines?
+
+**Answer:**
+- **For Python**: Define your function in a Python module (e.g. `lakeforge/transformations/custom.py`) with signature `def my_func(df: DataFrame, **params) -> DataFrame:`. In your JSON config, specify `"custom_module": "lakeforge.transformations.custom"` and `"custom_function": "my_func"`.
+- **For External SQL**: Create a `.sql` file in your repository (e.g. `configs/queries/my_query.sql`) and reference `"query_file": "configs/queries/my_query.sql"` in your transformation or aggregation JSON configuration.

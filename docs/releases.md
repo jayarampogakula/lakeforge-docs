@@ -4,6 +4,35 @@ All notable changes to LakeForge are documented here. LakeForge strictly adheres
 
 ---
 
+## [v1.2.0] - 2026-11-12 (Stage Registry, Modular Code & PR Reviewer)
+
+### ✨ Key Features & Improvements
+
+#### 1. Central Stage Registry & Multi-Account Deployments
+- **Registry Single Source of Truth**: `configs/environments/env_settings.json` now drives all stages for the CLI, Databricks Asset Bundles, notebook environment widgets, and CI/CD pipelines.
+- **`lakeforge sync-stages` CLI**: Synchronizes all bundle targets across root `databricks.yml`, `deployments/_template/`, and all active tenant bundles (`deployments/<client_id>/`).
+- **Multi-Account Stages**: Support for `workspace_host` in `env_settings.json` to route stages to independent Databricks accounts.
+- **Service Principal M2M OAuth**: Support for `DATABRICKS_<STAGE>_CLIENT_ID` / `_CLIENT_SECRET` credential pairs with precedence over static tokens.
+
+#### 2. Modular Python Functions & External SQL Support
+- **Modular Transformations**: Extensible Python transformation libraries (`lakeforge/transformations/generic.py`, `custom.py`, and tenant-specific `client_alpha/custom.py`).
+- **Modular Aggregations**: Custom Gold mart aggregation libraries (`lakeforge/aggregations/custom.py` and `client_alpha/custom.py`).
+- **External SQL Files**: Replaced messy inline JSON SQL with direct references to `.sql` files (`query_file`).
+
+#### 3. Automated PR Reviewer (`lakeforge pr-review`)
+- AST-based duplicate function detector to prevent code duplication.
+- Test coverage verification and configuration schema validation.
+- Automated posting of review feedback directly to PR threads.
+
+#### 4. Client Blueprint Template & Comprehensive Config Dictionaries
+- Standardized onboarding blueprint in `deployments/_template/`.
+- Exhaustive `template_all_options.json` files in every config directory (`ingestion`, `dq`, `transformations`, `aggregations`, `views`, `governance`).
+
+#### 5. Mirrored CI/CD Suite (GitHub Actions + Azure DevOps)
+- Mirrored workflows: `ci_cd.yml`, `pr_review.yml`, `dab_deploy.yml`, `dab_export.yml` in `.github/workflows/` and `azure-pipelines/workflows/`.
+
+---
+
 ## [v1.1.0] - 2026-11-10 (Multi-Bundle & Enterprise Orchestration)
 
 ### ✨ Key Features & Improvements
